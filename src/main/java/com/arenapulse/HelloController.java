@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -93,6 +94,19 @@ public class HelloController {
         Venue savedVenue = venueRepository.save(existingVenue);
 
         return ResponseEntity.ok(savedVenue);
+    }
+    @DeleteMapping("/api/venues/{id}")
+    public ResponseEntity<Void> deleteVenue(@PathVariable Integer id) {
+
+        Venue venue = venueRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                       HttpStatus.NOT_FOUND,
+                      "Venue not found"
+                ));
+
+        venueRepository.delete(venue);
+
+        return ResponseEntity.noContent().build();
     }
 
 }

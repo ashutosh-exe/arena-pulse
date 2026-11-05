@@ -4,7 +4,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.MediaType;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import org.junit.jupiter.api.Test;
@@ -78,5 +80,73 @@ class VenueControllerTests {
                         .content("{\"name\":\"Location Header Test\",\"sport\":\"Basketball\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"));
+    }
+    @Test
+    void updateVenueShouldReturnUpdatedVenue() throws Exception {
+
+        // First, create a venue
+        String venueJson = """
+                {
+                    "name": "Original Court",
+                    "sport": "Basketball"
+                }
+                """;
+
+        String response = mockMvc.perform(post("/api/venues")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(venueJson))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        // Extract the generated ID
+        int id = com.jayway.jsonpath.JsonPath
+                .read(response, "$.id");
+
+        // Now update the venue
+        String updatedJson = """
+               {
+                    "name": "Updated Court",
+                    "sport": "Badminton"
+                }
+             """;
+
+        mockMvc.perform(put("/api/venues/" + id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(updatedJson))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Updated Court"))
+            .andExpect(jsonPath("$.sport").value("Badminton"));
+    }
+    @Test
+    void deleteVenueShouldReturnNoContent() throws Exception {
+
+        // First create a venue
+        String response = mockMvc.perform(post("/api/venues")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                            {
+                                "name": "Delete Test Court",
+                                "sport": "Basketball"
+                            }
+                            """))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        // Extract the generated ID
+        Integer id = com.jayway.jsonpath.JsonPath.read(response, "$.id");
+
+        // Now delete that venue
+        mockMvc.perform(delete("/api/venues/" + id))
+                .andExpect(status().isNoContent());
+    }
+    @Test
+    void deleteNonExistentVenueShouldReturnNotFound() throws Exception {
+
+        mockMvc.perform(delete("/api/venues/999999"))
+            .andExpect(status().isNotFound());
     }
 }
