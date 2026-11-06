@@ -15,6 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @RestController
 public class HelloController {
@@ -37,28 +41,60 @@ public class HelloController {
 
     
     @GetMapping("/api/venues")
-    public List<Venue> getVenues(
+    public Page<Venue> getAllVenues(
         @RequestParam(required = false) String sport,
-        @RequestParam(required = false) String name) {
+        @RequestParam(required = false) String name,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "name") String sortBy,
+        @RequestParam(defaultValue = "asc") String direction) { {
 
-        boolean hasSport = sport != null && !sport.isBlank();
-        boolean hasName = name != null && !name.isBlank();
+        if (page < 0 || size <= 0 || size > 100) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Page must be non-negative and size must be between 1 and 100"
+        );
+    }
 
-        if (hasSport && hasName) {
-            return venueRepository
-                .findBySportIgnoreCaseAndNameContainingIgnoreCase(
-                        sport, name);
+    if (!sortBy.equals("name") && !sortBy.equals("sport") && !sortBy.equals("id")) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Invalid sort field"
+        );
+    }
+
+    if (!direction.equalsIgnoreCase("asc") && !direction.equalsIgnoreCase("desc")) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Direction must be asc or desc"
+        );
+    }
+
+    Sort sort = Sort.by(
+        direction.equalsIgnoreCase("desc")
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC,
+        sortBy
+    );
+
+    Pageable pageable = PageRequest.of(page, size, sort);
+
+    if (sport != null && name != null) {
+        return venueRepository.findBySportIgnoreCaseAndNameContainingIgnoreCase(
+            sport, name, pageable
+        );
+    }
+
+    if (sport != null) {
+         return venueRepository.findBySportIgnoreCase(sport, pageable);
+    }
+
+    if (name != null) {
+        return venueRepository.findByNameContainingIgnoreCase(name, pageable);
+    }
+
+    return venueRepository.findAll(pageable);
         }
-
-        if (hasSport) {
-        return venueRepository.findBySportIgnoreCase(sport);
-        }
-
-        if (hasName) {
-        return venueRepository.findByNameContainingIgnoreCase(name);
-        }
-
-        return venueRepository.findAll();
     }
 
     @GetMapping("/api/venues/{id}")

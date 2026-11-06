@@ -2,13 +2,15 @@ package com.arenapulse;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface VenueRepository extends JpaRepository<Venue, Integer> {
 
-    List<Venue> findBySportIgnoreCase(String sport);
+    Page<Venue> findBySportIgnoreCase(String sport, Pageable pageable);
 
-    List<Venue> findByNameContainingIgnoreCase(String name);
+    Page<Venue> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
-    List<Venue> findBySportIgnoreCaseAndNameContainingIgnoreCase(
-        String sport, String name);
+    Page<Venue> findBySportIgnoreCaseAndNameContainingIgnoreCase(
+        String sport, String name, Pageable pageable);
 }

@@ -45,7 +45,7 @@ class VenueControllerTests {
         // Now, search for badminton venues
         mockMvc.perform(get("/api/venues?sport=Badminton"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].sport", everyItem(is("Badminton"))));
+                .andExpect(jsonPath("$.content[*].sport", everyItem(is("Badminton"))));
     }
     @Test
     void getNonExistentVenueShouldReturnNotFound() throws Exception {
